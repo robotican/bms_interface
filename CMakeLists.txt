@@ -19,7 +19,7 @@ set(
         PROJECT_FILES
         src/bms_interface.cpp
         include/bms_interface/bms_interface.h
-        example/bms_example.cpp
+        test/bms_test.cpp
 )
 
 include_directories(

@@ -34,46 +34,70 @@
 #include <ros/ros.h>
 #include <bms_interface/bms_interface.h>
 
-#define BMS_PORT "/dev/armadillo2/BMS"
-
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "bms_node");
+    ros::init(argc, argv, "bms_test_node");
     ros::NodeHandle nh;
 
+    std::string bms_port;
+    if (!ros::param::get("~port", bms_port))
+    {
+        ROS_ERROR("[bms_test]: port param is missing on param server. make sure that this "
+                          "param exist in bms_test.launch file. shutting down...\n");
+        ros::shutdown();
+        exit (EXIT_FAILURE);
+    }
+
     bms::BMSInterface bms;
+    ROS_INFO("[bms_test]: Trying to connect to tty port: %s ...\n", bms_port.c_str());
     try
     {
-        bms.connect(BMS_PORT);
+        bms.connect(bms_port);
     }
     catch (bms::BMSException exp)
     {
-        ROS_ERROR("[bms_test]: %s", exp.what());
-        //ros::shutdown();
+        ROS_ERROR("[bms_test]: %s\nShutting down...", exp.what());
+        exit(EXIT_FAILURE);
     }
 
+    ROS_INFO("[bms_test]: Connected to %s\n", bms_port.c_str());
+
+    // read data at 2 hz. Changing rate might
+    // cause communication problems with BMS.
     ros::Rate loop_rate(2);
-
-
+    bms::data bms_data;
     while (ros::ok())
     {
 
         try
         {
-            bms.read();
+            ROS_INFO("\n[bms_test]: Trying to read from BMS ...\n");
+            bms_data = bms.read();
         }
         catch(bms::BMSErrorException exp)
         {
-            ROS_ERROR("[bms_test]: %s", exp.what());
+            ROS_ERROR("[bms_test]: %s\n", exp.what());
             ros::shutdown();
             exit(EXIT_FAILURE);
         }
         catch(bms::BMSWarnException exp)
         {
-            ROS_WARN("[bms_test]: %s", exp.what());
+            ROS_WARN("[bms_test]: %s\n", exp.what());
         }
 
-
+        ROS_INFO("\n[bms_test]: Read succesfull");
+        ROS_INFO("[bms_test]: Percentage: %u", bms_data.soc);
+        ROS_INFO("[bms_test]: Charging Current: %f", bms_data.chrg_current);
+        ROS_INFO("[bms_test]: Discharging Current: %f", bms_data.dchrg_current);
+        ROS_INFO("[bms_test]: Voltage (Ah): %f", bms_data.vbat);
+        ROS_INFO("[bms_test]: Capacity (Ah): %d", bms_data.cap_full);
+        ROS_INFO("[bms_test]: Is Charging? %s", bms_data.is_chrg ? "true" : "false");
+        ROS_INFO("[bms_test]: Cells:");
+        for (const float vcell : bms_data.vcells)
+        {
+            printf("| %f |", vcell);
+        }
+        printf("\n");
         loop_rate.sleep();
         ros::spinOnce();
     }

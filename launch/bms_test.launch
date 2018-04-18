@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <node name="bms_test_node" pkg="bms_interface" type="bms_interface_node" respawn="false" output="screen">
+
+        <!--settings-->
+        <param name="port" value="/dev/ttyUSB0" />
+
+    </node>
+
+</launch>

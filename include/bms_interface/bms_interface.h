@@ -219,10 +219,9 @@ namespace bms
         int fetchParam(char buff[], int param_indx, size_t param_size);
 
     public:
+        ~BMSInterface();
         void connect(std::string port);
         data read();
-        BMSInterface() {int a = BMS_PKG_CAP_FULL_INDX;}
-        ~BMSInterface();
         uint8_t getBitInByte(uint8_t byte, uint8_t position)
         {
             return (byte >> position) & 0x1;
